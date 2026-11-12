@@ -31,15 +31,26 @@ export default function Editor({ project, initialComments }: { project: Project;
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latest = useRef(project.tree);
 
+  // One save at a time, always sending the newest tree, so a slow earlier save can't land last.
+  const saving = useRef(false);
   const flush = useCallback(async () => {
-    if (!dirty.current) return;
-    dirty.current = false;
-    setSave("saving");
-    const { error } = await supabase.from("projects").update({ tree: latest.current }).eq("id", project.id);
-    if (error) {
-      dirty.current = true;
-      setSave("error");
-    } else setSave(dirty.current ? "saving" : "saved");
+    if (saving.current) return;
+    saving.current = true;
+    try {
+      while (dirty.current) {
+        dirty.current = false;
+        setSave("saving");
+        const { error } = await supabase.from("projects").update({ tree: latest.current }).eq("id", project.id);
+        if (error) {
+          dirty.current = true;
+          setSave("error");
+          return;
+        }
+      }
+      setSave("saved");
+    } finally {
+      saving.current = false;
+    }
   }, [supabase, project.id]);
 
   const onChange = (t: Tree) => {

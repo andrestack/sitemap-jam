@@ -21,7 +21,7 @@ Open <http://localhost:3000/demo>. It runs on an invented business with nothing 
 
 1. **Supabase project.** Create one, then run `supabase/migrations/0001_init.sql` in the SQL editor.
 2. **Lock sign-ups.** Authentication → Sign In / Providers → turn **Allow new users to sign up** off. Then create your own user under Authentication → Users (tick auto-confirm). This matters: the generate endpoint spends Claude credits.
-3. **Env.** Copy `.env.example` to `.env.local` and fill it in. Set `ALLOWED_EMAILS` to your email as a second lock on `/api/generate`.
+3. **Env.** Copy `.env.example` to `.env.local` and fill it in. Set `ALLOWED_EMAILS` to your email (required: `/api/generate` refuses to run without it).
 4. `npm run dev`, sign in at `/login`, create a sitemap from `/`.
 
 ## How sharing is secured

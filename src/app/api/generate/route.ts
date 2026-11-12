@@ -19,7 +19,10 @@ export async function POST(req: Request) {
 
   // Sign-ups should be disabled in Supabase; this is a second lock on the paid API call.
   const allowed = process.env.ALLOWED_EMAILS?.split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
-  if (allowed?.length && !allowed.includes((user.email ?? "").toLowerCase())) {
+  if (!allowed?.length) {
+    return NextResponse.json({ error: "Set ALLOWED_EMAILS in the environment before generating." }, { status: 503 });
+  }
+  if (!allowed.includes((user.email ?? "").toLowerCase())) {
     return NextResponse.json({ error: "Not allowed" }, { status: 403 });
   }
 
