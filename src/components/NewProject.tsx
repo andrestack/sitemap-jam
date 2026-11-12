@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "./ui/button";
 
 export default function NewProject() {
   const router = useRouter();
@@ -43,9 +44,9 @@ export default function NewProject() {
         className="w-full resize-y rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900"
       />
       {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
-      <button disabled={busy} className="rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white hover:bg-neutral-700 disabled:opacity-40">
+      <Button type="submit" variant="primary" disabled={busy}>
         {busy ? "Generating… this can take a minute" : "Generate sitemap"}
-      </button>
+      </Button>
     </form>
   );
 }

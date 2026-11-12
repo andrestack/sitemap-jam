@@ -14,6 +14,22 @@ import {
   type Node,
   type NodeProps,
 } from "@xyflow/react";
+import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  pointerWithin,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type CollisionDetection,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import { Menu } from "@base-ui/react/menu";
+import { clsx } from "clsx";
 import type { CommentRow, CommentTarget, Page, Tree } from "@/lib/types";
 import { SECTION_TYPES } from "@/lib/types";
 import {
@@ -24,16 +40,22 @@ import {
   deleteSection,
   layoutTree,
   moveSection,
+  moveSectionOnto,
   movePage,
   renamePage,
+  siblingPosition,
   updateSection,
 } from "@/lib/tree";
+import { Button, IconButton } from "./ui/button";
+import { useConfirm } from "./ui/confirm";
+import { ArrowLeftIcon, ArrowRightIcon, CloseIcon, CommentIcon, DotsIcon, GripIcon, PlusIcon, TrashIcon } from "./ui/icons";
 
 type Ctx = {
   tree: Tree;
   mode: "edit" | "view";
   openCounts: Map<string, number>;
   activeKey: string | null;
+  dragging: boolean;
   onChange: (t: Tree) => void;
   onOpenComments: (t: CommentTarget) => void;
 };
@@ -51,62 +73,59 @@ function CommentButton({ target, label }: { target: CommentTarget; label: string
   const { openCounts, activeKey, onOpenComments } = useCanvas();
   const key = targetKey(target);
   const n = openCounts.get(key) ?? 0;
-  const active = activeKey === key;
   return (
-    <button
-      type="button"
-      title={label}
-      aria-label={label}
+    <IconButton
+      label={label}
+      ariaLabel={label}
+      size="iconSm"
       onClick={() => onOpenComments(target)}
-      className={`nodrag nopan inline-flex h-6 min-w-6 items-center justify-center gap-1 rounded-full px-1.5 text-[11px] font-medium leading-none transition ${
-        n > 0
-          ? "bg-amber-400 text-amber-950 hover:bg-amber-300"
-          : active
-            ? "bg-neutral-900 text-white"
-            : "bg-neutral-100 text-neutral-500 hover:bg-neutral-200"
-      }`}
+      className={clsx(
+        "nodrag nopan",
+        n > 0 && "!w-auto min-w-6 gap-1 bg-amber-400 px-1.5 text-[11px] !text-amber-950 hover:!bg-amber-300",
+        n === 0 && activeKey === key && "bg-neutral-900 !text-white hover:bg-neutral-700",
+      )}
     >
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-        <path d="M21 15a2 2 0 0 1-2 2H8l-5 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
-      </svg>
+      <CommentIcon width={12} height={12} />
       {n > 0 ? n : null}
-    </button>
+    </IconButton>
   );
 }
 
 function SectionCard({ page, sectionId }: { page: Page; sectionId: string }) {
   const { tree, mode, onChange, activeKey } = useCanvas();
-  const [over, setOver] = useState(false);
   const section = page.sections.find((s) => s.id === sectionId)!;
   const editing = mode === "edit";
   const key = targetKey({ pageId: page.id, sectionId });
 
+  const drag = useDraggable({ id: sectionId, disabled: !editing });
+  const drop = useDroppable({ id: `drop:${sectionId}`, disabled: !editing });
+  const handleProps = { ref: drag.setActivatorNodeRef, ...drag.listeners, ...drag.attributes };
+
   return (
     <div
-      draggable={editing}
-      onDragStart={(e) => {
-        e.dataTransfer.setData("text/section", sectionId);
-        e.dataTransfer.effectAllowed = "move";
+      ref={(el) => {
+        drop.setNodeRef(el);
+        drag.setNodeRef(el);
       }}
-      onDragOver={(e) => {
-        if (!editing || !e.dataTransfer.types.includes("text/section")) return;
-        e.preventDefault();
-        setOver(true);
-      }}
-      onDragLeave={() => setOver(false)}
-      onDrop={(e) => {
-        setOver(false);
-        const id = e.dataTransfer.getData("text/section");
-        if (!editing || !id) return;
-        e.preventDefault();
-        e.stopPropagation();
-        onChange(moveSection(tree, id, page.id, sectionId));
-      }}
-      className={`nodrag nopan group rounded-md border bg-white px-2.5 py-2 text-left transition ${
-        over ? "border-neutral-900 shadow-[0_-3px_0_0_#171717]" : activeKey === key ? "border-neutral-900" : "border-neutral-200"
-      } ${editing ? "cursor-grab active:cursor-grabbing" : ""}`}
+      className={clsx(
+        "nodrag nopan group relative rounded-md border bg-white px-2.5 py-2 text-left transition-[border-color,opacity,box-shadow] duration-150",
+        activeKey === key ? "border-neutral-900" : "border-neutral-200 hover:border-neutral-300",
+        drag.isDragging && "opacity-40",
+        drop.isOver && !drag.isDragging && "shadow-[0_-3px_0_0_#171717]",
+      )}
     >
-      <div className="flex items-center gap-1.5">
+      <div className="flex items-center gap-1">
+        {editing && (
+          <button
+            {...handleProps}
+            type="button"
+            aria-label={`Drag ${section.type} to reorder`}
+            title="Drag to reorder"
+            className="-ml-1.5 inline-flex h-6 w-5 shrink-0 cursor-grab touch-none items-center justify-center rounded text-neutral-300 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:text-neutral-700 focus-visible:outline-2 focus-visible:outline-neutral-900 active:cursor-grabbing"
+          >
+            <GripIcon width={14} height={14} />
+          </button>
+        )}
         {editing ? (
           <input
             list="section-types"
@@ -120,15 +139,15 @@ function SectionCard({ page, sectionId }: { page: Page; sectionId: string }) {
         )}
         <CommentButton target={{ pageId: page.id, sectionId }} label={`Comments on ${section.type}`} />
         {editing && (
-          <button
-            type="button"
-            aria-label={`Delete ${section.type}`}
-            title="Delete section"
+          <IconButton
+            label="Delete section"
+            ariaLabel={`Delete ${section.type} section`}
+            size="iconSm"
+            className="nodrag nopan opacity-0 hover:!bg-red-50 hover:!text-red-600 focus-visible:opacity-100 group-hover:opacity-100"
             onClick={() => onChange(deleteSection(tree, sectionId))}
-            className="inline-flex h-6 w-6 items-center justify-center rounded-full text-neutral-400 opacity-0 transition hover:bg-red-50 hover:text-red-600 group-hover:opacity-100 focus:opacity-100"
           >
-            ×
-          </button>
+            <CloseIcon width={12} height={12} />
+          </IconButton>
         )}
       </div>
       {editing ? (
@@ -147,14 +166,55 @@ function SectionCard({ page, sectionId }: { page: Page; sectionId: string }) {
   );
 }
 
+function AddSectionZone({ page }: { page: Page }) {
+  const { tree, onChange, dragging } = useCanvas();
+  const { setNodeRef, isOver } = useDroppable({ id: `end:${page.id}` });
+  return (
+    <div ref={setNodeRef} className="nodrag nopan">
+      <Button
+        variant="dashed"
+        size="sm"
+        className={clsx("w-full", dragging && "border-neutral-400 text-neutral-700", isOver && "!border-neutral-900 !bg-neutral-100 !text-neutral-900")}
+        onClick={() => onChange(addSection(tree, page.id))}
+      >
+        {dragging ? (
+          "Drop here to move to the end"
+        ) : (
+          <>
+            <PlusIcon width={12} height={12} /> Add section
+          </>
+        )}
+      </Button>
+    </div>
+  );
+}
+
+const menuItem =
+  "flex cursor-default select-none items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-neutral-700 outline-none data-highlighted:bg-neutral-100 data-highlighted:text-neutral-900 data-disabled:opacity-40";
+
 function PageNode({ data }: NodeProps<Node<{ pageId: string }>>) {
   const { tree, mode, onChange } = useCanvas();
+  const confirm = useConfirm();
   const page = tree.pages.find((p) => p.id === data.pageId);
   if (!page) return null;
   const editing = mode === "edit";
+  const { index, count } = siblingPosition(tree, page.id);
+
+  const askDelete = async () => {
+    const hasKids = tree.pages.some((p) => p.parentId === page.id);
+    const ok = await confirm({
+      title: `Delete "${page.name}"?`,
+      description: hasKids
+        ? "Its child pages move up a level. Comments on this page are kept but no longer shown."
+        : "The page and its sections are removed. Comments on it are kept but no longer shown.",
+      confirmLabel: "Delete page",
+      destructive: true,
+    });
+    if (ok) onChange(deletePage(tree, page.id));
+  };
 
   return (
-    <div style={{ width: NODE_W }} className="rounded-lg border border-neutral-300 bg-neutral-50 shadow-sm">
+    <div style={{ width: NODE_W }} className="group/page relative rounded-lg border border-neutral-300 bg-neutral-50 shadow-sm">
       <Handle type="target" position={Position.Top} className="!h-1.5 !w-1.5 !border-0 !bg-neutral-400" />
       <div className="flex items-center gap-1.5 border-b border-neutral-200 px-2.5 py-2">
         {editing ? (
@@ -170,65 +230,84 @@ function PageNode({ data }: NodeProps<Node<{ pageId: string }>>) {
         <CommentButton target={{ pageId: page.id, sectionId: null }} label={`Comments on ${page.name} page`} />
       </div>
 
-      <div
-        className="flex flex-col gap-1.5 p-2"
-        onDragOver={(e) => {
-          if (editing && e.dataTransfer.types.includes("text/section")) e.preventDefault();
-        }}
-        onDrop={(e) => {
-          const id = e.dataTransfer.getData("text/section");
-          if (!editing || !id) return;
-          e.preventDefault();
-          onChange(moveSection(tree, id, page.id, null));
-        }}
-      >
+      <div className="flex flex-col gap-1.5 p-2">
         {page.sections.map((s) => (
           <SectionCard key={s.id} page={page} sectionId={s.id} />
         ))}
-        {editing && (
-          <button
-            type="button"
-            onClick={() => onChange(addSection(tree, page.id))}
-            className="nodrag nopan rounded-md border border-dashed border-neutral-300 py-1 text-xs text-neutral-500 transition hover:border-neutral-500 hover:text-neutral-800"
-          >
-            + Add section
-          </button>
-        )}
+        {editing && <AddSectionZone page={page} />}
       </div>
 
       {editing && (
-        <div className="nodrag nopan flex items-center gap-1 border-t border-neutral-200 px-2 py-1.5 text-[11px] text-neutral-500">
-          <button type="button" onClick={() => onChange(addPage(tree, page.id))} className="rounded px-1.5 py-0.5 hover:bg-neutral-200">
-            + Child page
-          </button>
-          <button type="button" aria-label="Move page left" onClick={() => onChange(movePage(tree, page.id, -1))} className="rounded px-1.5 py-0.5 hover:bg-neutral-200">
-            ←
-          </button>
-          <button type="button" aria-label="Move page right" onClick={() => onChange(movePage(tree, page.id, 1))} className="rounded px-1.5 py-0.5 hover:bg-neutral-200">
-            →
-          </button>
-          <span className="flex-1" />
-          <button
-            type="button"
-            onClick={() => {
-              if (window.confirm(`Delete the "${page.name}" page? Its child pages move up a level.`)) onChange(deletePage(tree, page.id));
-            }}
-            className="rounded px-1.5 py-0.5 hover:bg-red-50 hover:text-red-600"
-          >
-            Delete
-          </button>
+        <div className="nodrag nopan flex items-center justify-between border-t border-neutral-200 px-2 py-1.5">
+          <div className="inline-flex items-center gap-0.5 rounded-md border border-neutral-200 bg-white p-0.5">
+            <IconButton label="Move page left" ariaLabel="Move page left" disabled={index <= 0} onClick={() => onChange(movePage(tree, page.id, -1))}>
+              <ArrowLeftIcon width={14} height={14} />
+            </IconButton>
+            <IconButton label="Move page right" ariaLabel="Move page right" disabled={index < 0 || index >= count - 1} onClick={() => onChange(movePage(tree, page.id, 1))}>
+              <ArrowRightIcon width={14} height={14} />
+            </IconButton>
+          </div>
+
+          <Menu.Root>
+            <Menu.Trigger
+              aria-label={`More actions for ${page.name}`}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-neutral-500 transition-colors hover:bg-neutral-200 hover:text-neutral-900 data-popup-open:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-neutral-900"
+            >
+              <DotsIcon width={16} height={16} />
+            </Menu.Trigger>
+            <Menu.Portal>
+              <Menu.Positioner side="bottom" align="end" sideOffset={6} className="z-50 outline-none">
+                <Menu.Popup className="min-w-44 origin-[var(--transform-origin)] rounded-lg border border-neutral-200 bg-white p-1 shadow-lg outline-none transition-[opacity,scale] duration-100 data-ending-style:scale-95 data-ending-style:opacity-0 data-starting-style:scale-95 data-starting-style:opacity-0">
+                  <Menu.Item className={menuItem} onClick={() => onChange(addPage(tree, page.id))}>
+                    <PlusIcon width={14} height={14} /> Add child page
+                  </Menu.Item>
+                  <Menu.Separator className="my-1 h-px bg-neutral-100" />
+                  <Menu.Item className={clsx(menuItem, "text-red-600 data-highlighted:bg-red-50 data-highlighted:text-red-700")} onClick={askDelete}>
+                    <TrashIcon width={14} height={14} /> Delete page
+                  </Menu.Item>
+                </Menu.Popup>
+              </Menu.Positioner>
+            </Menu.Portal>
+          </Menu.Root>
         </div>
       )}
+
+      {/* The connector handle and the add-child button share the bottom-centre of the card. */}
       <Handle type="source" position={Position.Bottom} className="!h-1.5 !w-1.5 !border-0 !bg-neutral-400" />
+      {editing && (
+        <div className="nodrag nopan absolute bottom-0 left-1/2 z-10 -translate-x-1/2 translate-y-1/2">
+          <IconButton
+            variant="primary"
+            label="Add child page"
+            ariaLabel={`Add a child page under ${page.name}`}
+            side="bottom"
+            className="!h-7 !w-7 rounded-full shadow-md ring-4 ring-neutral-100 hover:scale-110"
+            onClick={() => onChange(addPage(tree, page.id))}
+          >
+            <PlusIcon width={14} height={14} strokeWidth={2.5} />
+          </IconButton>
+        </div>
+      )}
     </div>
   );
 }
 
 const nodeTypes = { page: PageNode };
 
+/** Pointer first (precise drop target); closest-centre only for keyboard drags, which have no pointer. */
+const collision: CollisionDetection = (args) => {
+  if (!args.pointerCoordinates) return closestCenter(args);
+  return pointerWithin(args);
+};
+
 function Inner(props: Props) {
   const { tree, comments, activeTarget } = props;
   const positions = useMemo(() => layoutTree(tree), [tree]);
+  const [dragId, setDragId] = useState<string | null>(null);
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor),
+  );
 
   const nodes: Node[] = useMemo(
     () =>
@@ -254,20 +333,32 @@ function Inner(props: Props) {
     for (const c of comments) {
       if (c.parent_id || c.resolved) continue;
       const k = targetKey({ pageId: c.page_id, sectionId: c.section_id });
-      // (page_id is ignored for section comments; see targetKey)
       m.set(k, (m.get(k) ?? 0) + 1);
     }
     return m;
   }, [comments]);
 
+  const onChange = props.onChange ?? (() => {});
   const ctx: Ctx = {
     tree,
     mode: props.mode,
     openCounts,
     activeKey: activeTarget ? targetKey(activeTarget) : null,
-    onChange: props.onChange ?? (() => {}),
+    dragging: dragId !== null,
+    onChange,
     onOpenComments: props.onOpenComments,
   };
+
+  const onDragEnd = (e: DragEndEvent) => {
+    setDragId(null);
+    if (!e.over) return;
+    const id = String(e.active.id);
+    const over = String(e.over.id);
+    if (over.startsWith("end:")) onChange(moveSection(tree, id, over.slice(4), null));
+    else if (over.startsWith("drop:")) onChange(moveSectionOnto(tree, id, over.slice(5)));
+  };
+
+  const dragged = dragId ? tree.pages.flatMap((p) => p.sections).find((s) => s.id === dragId) : undefined;
 
   return (
     <CanvasCtx.Provider value={ctx}>
@@ -276,26 +367,44 @@ function Inner(props: Props) {
           <option key={t} value={t} />
         ))}
       </datalist>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        nodeTypes={nodeTypes}
-        fitView
-        fitViewOptions={{ padding: 0.15, maxZoom: 1 }}
-        minZoom={0.1}
-        maxZoom={1.5}
-        nodesDraggable={false}
-        nodesConnectable={false}
-        // Must stay selectable: React Flow turns off pointer events on nodes that are neither
-        // draggable nor selectable, which would make every button inside them unclickable.
-        elementsSelectable
-        panOnScroll
-        zoomOnScroll={false}
-        proOptions={{ hideAttribution: false }}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={collision}
+        autoScroll={false}
+        onDragStart={(e) => setDragId(String(e.active.id))}
+        onDragCancel={() => setDragId(null)}
+        onDragEnd={onDragEnd}
       >
-        <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#d4d4d4" />
-        <Controls showInteractive={false} />
-      </ReactFlow>
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          nodeTypes={nodeTypes}
+          fitView
+          fitViewOptions={{ padding: 0.15, maxZoom: 1 }}
+          minZoom={0.1}
+          maxZoom={1.5}
+          nodesDraggable={false}
+          nodesConnectable={false}
+          // Must stay selectable: React Flow turns off pointer events on nodes that are neither
+          // draggable nor selectable, which would make every button inside them unclickable.
+          elementsSelectable
+          panOnScroll
+          zoomOnScroll={false}
+          proOptions={{ hideAttribution: false }}
+        >
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#d4d4d4" />
+          <Controls showInteractive={false} />
+        </ReactFlow>
+        {/* Rendered at screen scale outside the zoomed canvas, so it stays readable at any zoom. */}
+        <DragOverlay dropAnimation={null} style={{ width: 240, height: "auto" }}>
+          {dragged ? (
+            <div className="rounded-md border border-neutral-900 bg-white px-3 py-2 shadow-xl">
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-neutral-700">{dragged.type}</p>
+              {dragged.description && <p className="mt-0.5 line-clamp-2 text-xs text-neutral-500">{dragged.description}</p>}
+            </div>
+          ) : null}
+        </DragOverlay>
+      </DndContext>
     </CanvasCtx.Provider>
   );
 }

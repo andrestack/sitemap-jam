@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from "react";
 import type { CommentRow, CommentTarget, Tree } from "@/lib/types";
+import { Button, IconButton } from "./ui/button";
+import { useConfirm } from "./ui/confirm";
+import { CloseIcon } from "./ui/icons";
 
 type Props = {
   target: CommentTarget;
@@ -43,9 +46,9 @@ export default function CommentPanel(p: Props) {
           <p className="text-[11px] font-medium uppercase tracking-wide text-neutral-400">Comments</p>
           <h2 className="truncate text-sm font-semibold text-neutral-900">{label}</h2>
         </div>
-        <button type="button" onClick={p.onClose} aria-label="Close comments" className="rounded p-1 text-neutral-500 hover:bg-neutral-100">
-          ×
-        </button>
+        <IconButton label="Close" ariaLabel="Close comments" side="left" onClick={p.onClose}>
+          <CloseIcon width={14} height={14} />
+        </IconButton>
       </header>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
@@ -113,6 +116,7 @@ function Thread({ root, replies, ...p }: { root: CommentRow; replies: CommentRow
 }
 
 function Entry({ c, ...p }: { c: CommentRow } & Props) {
+  const confirm = useConfirm();
   return (
     <div>
       <div className="flex items-baseline gap-2">
@@ -123,8 +127,10 @@ function Entry({ c, ...p }: { c: CommentRow } & Props) {
           <button
             type="button"
             aria-label="Delete comment"
-            onClick={() => window.confirm("Delete this comment?") && p.onDelete!(c.id)}
-            className="ml-auto text-xs text-neutral-300 hover:text-red-600"
+            onClick={async () => {
+              if (await confirm({ title: "Delete this comment?", description: "This can't be undone.", confirmLabel: "Delete", destructive: true })) p.onDelete!(c.id);
+            }}
+            className="ml-auto rounded text-xs text-neutral-300 transition-colors hover:text-red-600 focus-visible:text-red-600 focus-visible:outline-2 focus-visible:outline-neutral-900"
           >
             Delete
           </button>
@@ -185,14 +191,9 @@ function NewComment(p: {
         className="w-full resize-none rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm outline-none focus:border-neutral-900"
       />
       {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
-      <button
-        type="button"
-        disabled={busy || !body.trim()}
-        onClick={submit}
-        className="rounded-md bg-neutral-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:opacity-40"
-      >
+      <Button variant="primary" size={p.compact ? "sm" : "md"} disabled={busy || !body.trim()} onClick={submit}>
         {busy ? "Sending…" : p.submitLabel}
-      </button>
+      </Button>
     </div>
   );
 }

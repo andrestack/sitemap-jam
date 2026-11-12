@@ -125,6 +125,26 @@ export function moveSection(t: Tree, sectionId: string, toPageId: string, before
   });
 }
 
+/** Drops a section onto another section: lands before it, or after it when moving down within a page. */
+export function moveSectionOnto(t: Tree, sectionId: string, overSectionId: string): Tree {
+  const from = t.pages.find((p) => p.sections.some((s) => s.id === sectionId));
+  const to = t.pages.find((p) => p.sections.some((s) => s.id === overSectionId));
+  if (!from || !to || sectionId === overSectionId) return t;
+  if (from.id === to.id) {
+    const a = from.sections.findIndex((s) => s.id === sectionId);
+    const b = from.sections.findIndex((s) => s.id === overSectionId);
+    if (a < b) return moveSection(t, sectionId, to.id, to.sections[b + 1]?.id ?? null);
+  }
+  return moveSection(t, sectionId, to.id, overSectionId);
+}
+
+/** Where a page sits among its siblings, to disable the move buttons at either end. */
+export function siblingPosition(t: Tree, id: string) {
+  const page = t.pages.find((p) => p.id === id);
+  const siblings = t.pages.filter((p) => p.parentId === (page?.parentId ?? null));
+  return { index: siblings.findIndex((p) => p.id === id), count: siblings.length };
+}
+
 /* ---------- layout ---------- */
 
 export const NODE_W = 300;
