@@ -21,6 +21,16 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-fraunces);
+  --font-brand: var(--font-fredoka);
+}
+
+/* Page titles and panel headings use the serif. Small uppercase labels (h3) stay in the sans. */
+@layer base {
+  h1,
+  h2 {
+    font-family: var(--font-fraunces), Georgia, serif;
+  }
 }
 
 @theme {

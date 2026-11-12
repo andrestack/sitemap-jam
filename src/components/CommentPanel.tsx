@@ -44,7 +44,7 @@ export default function CommentPanel(p: Props) {
       <header className="flex items-start justify-between gap-2 border-b border-neutral-200 px-4 py-3">
         <div className="min-w-0">
           <p className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">Comments</p>
-          <h2 className="truncate text-sm font-semibold text-neutral-900">{label}</h2>
+          <h2 className="truncate text-base font-semibold text-neutral-900">{label}</h2>
         </div>
         <IconButton label="Close" ariaLabel="Close comments" side="left" onClick={p.onClose}>
           <CloseIcon width={14} height={14} />

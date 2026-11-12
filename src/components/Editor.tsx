@@ -152,7 +152,7 @@ export default function Editor({ project, initialComments, projects, userEmail, 
         projectHref={projectHref}
         onNewSitemap={onNewSitemap}
         currentId={project.id}
-        title={<h1 className="min-w-0 truncate text-sm font-semibold text-neutral-900">{project.name}</h1>}
+        title={<h1 className="min-w-0 truncate text-base font-semibold text-neutral-900">{project.name}</h1>}
       >
         <Button variant="ghost" size="sm" aria-pressed={showNav} onClick={toggleNav} className={showNav ? "bg-neutral-100 !text-neutral-900" : ""}>
           <NavIcon width={14} height={14} /> <span className="hidden sm:inline">Navigation</span>

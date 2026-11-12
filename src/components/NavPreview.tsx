@@ -209,7 +209,7 @@ export default function NavPreview({ tree, siteName, currentId, onSelect, onClos
     <section aria-label="Navigation preview" className="max-h-[46vh] overflow-y-auto border-b border-neutral-200 bg-neutral-50 px-4 py-3">
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         <div className="min-w-0 flex-1">
-          <h2 className="text-sm font-semibold text-neutral-900">Navigation preview</h2>
+          <h2 className="text-base font-semibold text-neutral-900">Navigation preview</h2>
           <p className="text-xs text-neutral-500">Built from your sitemap: pages under Home form the top bar, deeper pages sit in dropdowns. Click around like a visitor would.</p>
         </div>
         <div role="group" aria-label="Preview size" className="flex rounded-md border border-neutral-300 bg-white p-0.5 text-xs">

@@ -32,7 +32,7 @@ export default function NewSitemapCard({ busy, error, onSubmit }: Props) {
       aria-busy={busy}
       className="w-full rounded-xl border border-neutral-200 bg-white p-5 shadow-xl shadow-neutral-900/10"
     >
-      <h1 className="text-base font-semibold text-neutral-900">New sitemap</h1>
+      <h1 className="text-xl font-semibold text-neutral-900">New sitemap</h1>
       <p className="mt-1 text-sm text-neutral-500">
         Describe the business. Sitemap Jam plans the pages and the sections on each one.
       </p>

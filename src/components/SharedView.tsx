@@ -65,7 +65,7 @@ export default function SharedView({
   return (
     <div className="flex h-dvh flex-col bg-neutral-100">
       <header className="flex items-center gap-3 border-b border-neutral-200 bg-white px-4 py-2.5">
-        <h1 className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-900">{name}</h1>
+        <h1 className="min-w-0 flex-1 truncate text-base font-semibold text-neutral-900">{name}</h1>
         <p className="hidden text-xs text-neutral-500 md:block">Click the speech bubble on any page or section to leave a comment.</p>
         <Button
           variant="secondary"

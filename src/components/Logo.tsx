@@ -13,8 +13,8 @@ export default function Logo({ size = 36, compact = false }: { size?: number; co
       <span
         className={
           compact
-            ? "hidden whitespace-nowrap text-base font-semibold tracking-tight text-neutral-900 sm:inline"
-            : "text-xl font-semibold tracking-tight text-neutral-900"
+            ? "font-brand hidden whitespace-nowrap text-lg font-semibold text-neutral-900 sm:inline"
+            : "font-brand text-2xl font-semibold text-neutral-900"
         }
       >
         {APP_NAME}

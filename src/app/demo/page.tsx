@@ -108,7 +108,7 @@ function Demo() {
     <div className="flex h-dvh flex-col bg-neutral-100">
       <header className="flex items-center gap-3 border-b border-neutral-200 bg-white px-4 py-2.5">
         <Link href="/" className="text-sm text-neutral-500 hover:text-neutral-900">← Home</Link>
-        <h1 className="flex-1 truncate text-sm font-semibold text-neutral-900">Demo: Wattle &amp; Fern Café (nothing is saved)</h1>
+        <h1 className="flex-1 truncate text-base font-semibold text-neutral-900">Demo: Wattle &amp; Fern Café (nothing is saved)</h1>
         <Button
           variant="secondary"
           size="sm"
