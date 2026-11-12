@@ -4,6 +4,8 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/browser";
 import { Button } from "@/components/ui/button";
+import Logo from "@/components/Logo";
+import { APP_TAGLINE } from "@/lib/brand";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -26,8 +28,8 @@ export default function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-sm flex-col justify-center px-4">
-      <h1 className="text-xl font-semibold text-neutral-900">Sitemap studio</h1>
-      <p className="mt-1 text-sm text-neutral-500">Sign in to build and share sitemaps.</p>
+      <h1><Logo size={56} /></h1>
+      <p className="mt-3 text-sm text-neutral-500">{APP_TAGLINE}</p>
       {!configured && (
         <p role="alert" className="mt-4 rounded-md bg-amber-50 p-3 text-sm text-amber-900">
           Supabase isn&apos;t configured yet. Copy <code>.env.example</code> to <code>.env.local</code> and fill it in.

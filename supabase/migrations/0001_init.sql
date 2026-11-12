@@ -40,7 +40,9 @@ create table public.comments (
 create index comments_project_idx on public.comments (project_id, created_at);
 
 create or replace function public.touch_updated_at() returns trigger
-language plpgsql as $$
+language plpgsql
+set search_path = ''
+as $$
 begin
   new.updated_at = now();
   return new;
@@ -54,29 +56,36 @@ create trigger projects_touch_updated_at
 alter table public.projects enable row level security;
 alter table public.comments enable row level security;
 
+-- Table privileges. RLS decides which rows; these decide whether the role can touch the table at all.
+-- Stated explicitly so the schema works whether or not the project auto-grants on new tables.
+-- `anon` (the public API key) gets nothing. The service role bypasses RLS but still needs privileges.
+revoke all on public.projects, public.comments from anon;
+grant select, insert, update, delete on public.projects, public.comments to authenticated;
+grant all on public.projects, public.comments to service_role;
+
 create policy "owner reads own projects" on public.projects
-  for select to authenticated using (owner_id = auth.uid());
+  for select to authenticated using (owner_id = (select auth.uid()));
 create policy "owner creates own projects" on public.projects
-  for insert to authenticated with check (owner_id = auth.uid());
+  for insert to authenticated with check (owner_id = (select auth.uid()));
 create policy "owner updates own projects" on public.projects
-  for update to authenticated using (owner_id = auth.uid()) with check (owner_id = auth.uid());
+  for update to authenticated using (owner_id = (select auth.uid())) with check (owner_id = (select auth.uid()));
 create policy "owner deletes own projects" on public.projects
-  for delete to authenticated using (owner_id = auth.uid());
+  for delete to authenticated using (owner_id = (select auth.uid()));
 
 create policy "owner reads comments on own projects" on public.comments
   for select to authenticated using (
-    exists (select 1 from public.projects p where p.id = comments.project_id and p.owner_id = auth.uid())
+    exists (select 1 from public.projects p where p.id = comments.project_id and p.owner_id = (select auth.uid()))
   );
 create policy "owner replies on own projects" on public.comments
   for insert to authenticated with check (
     by_owner = true and
-    exists (select 1 from public.projects p where p.id = comments.project_id and p.owner_id = auth.uid())
+    exists (select 1 from public.projects p where p.id = comments.project_id and p.owner_id = (select auth.uid()))
   );
 create policy "owner resolves comments on own projects" on public.comments
   for update to authenticated using (
-    exists (select 1 from public.projects p where p.id = comments.project_id and p.owner_id = auth.uid())
+    exists (select 1 from public.projects p where p.id = comments.project_id and p.owner_id = (select auth.uid()))
   );
 create policy "owner deletes comments on own projects" on public.comments
   for delete to authenticated using (
-    exists (select 1 from public.projects p where p.id = comments.project_id and p.owner_id = auth.uid())
+    exists (select 1 from public.projects p where p.id = comments.project_id and p.owner_id = (select auth.uid()))
   );

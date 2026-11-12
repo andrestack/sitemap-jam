@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense } from "react";
 import { redirect } from "next/navigation";
+import Logo from "@/components/Logo";
 import NewProject from "@/components/NewProject";
 import { createClient } from "@/lib/supabase/server";
 
@@ -16,8 +17,8 @@ async function HomeContent() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
     return (
       <main className="mx-auto w-full max-w-xl px-4 py-16">
-        <h1 className="text-xl font-semibold text-neutral-900">Sitemap studio</h1>
-        <p className="mt-3 text-sm text-neutral-600">
+        <h1><Logo size={44} /></h1>
+        <p className="mt-5 text-sm text-neutral-600">
           Supabase isn&apos;t configured yet. Copy <code>.env.example</code> to <code>.env.local</code>, fill it in and run the migration in{" "}
           <code>supabase/migrations</code>. Meanwhile you can try the editor on{" "}
           <Link href="/demo" className="underline">the demo page</Link>.
@@ -37,8 +38,11 @@ async function HomeContent() {
 
   return (
     <main className="mx-auto w-full max-w-2xl px-4 py-12">
-      <h1 className="text-xl font-semibold text-neutral-900">Sitemaps</h1>
-      <div className="mt-6">
+      <Link href="/" aria-label="Sitemap Jam home" className="inline-flex rounded-lg focus-visible:outline-2 focus-visible:outline-neutral-900">
+        <Logo size={40} />
+      </Link>
+      <h1 className="mt-8 text-sm font-semibold uppercase tracking-wide text-neutral-400">Your sitemaps</h1>
+      <div className="mt-3">
         <NewProject />
       </div>
       <ul className="mt-8 divide-y divide-neutral-200 rounded-xl border border-neutral-200 bg-white">

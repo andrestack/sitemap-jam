@@ -26,6 +26,10 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Not allowed" }, { status: 403 });
   }
 
+  if (!process.env.OPENROUTER_API_KEY) {
+    return NextResponse.json({ error: "Set OPENROUTER_API_KEY in .env.local, then restart the dev server." }, { status: 503 });
+  }
+
   const parsed = Body.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json({ error: "Enter a name and a brief of at least 10 characters." }, { status: 400 });

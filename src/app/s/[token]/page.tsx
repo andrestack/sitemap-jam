@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { TreeSchema, type CommentRow } from "@/lib/types";
 
 // Client links must never be indexed or cached.
-export const metadata: Metadata = { title: "Sitemap review", robots: { index: false, follow: false } };
+export const metadata: Metadata = { title: { absolute: "Sitemap review" }, robots: { index: false, follow: false } };
 export default function SharedPage({ params }: PageProps<"/s/[token]">) {
   return (
     <Suspense fallback={<div className="grid h-dvh place-items-center text-sm text-neutral-400">Loading…</div>}>
