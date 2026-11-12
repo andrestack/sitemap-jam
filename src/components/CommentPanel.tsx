@@ -43,7 +43,7 @@ export default function CommentPanel(p: Props) {
     <aside className="flex h-full w-full flex-col border-l border-neutral-200 bg-white sm:w-96" aria-label="Comments">
       <header className="flex items-start justify-between gap-2 border-b border-neutral-200 px-4 py-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-medium uppercase tracking-wide text-neutral-400">Comments</p>
+          <p className="text-[11px] font-medium uppercase tracking-wide text-neutral-500">Comments</p>
           <h2 className="truncate text-sm font-semibold text-neutral-900">{label}</h2>
         </div>
         <IconButton label="Close" ariaLabel="Close comments" side="left" onClick={p.onClose}>
@@ -52,7 +52,7 @@ export default function CommentPanel(p: Props) {
       </header>
 
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-3">
-        {threads.length === 0 && <p className="text-sm text-neutral-400">No comments here yet.</p>}
+        {threads.length === 0 && <p className="text-sm text-neutral-500">No comments here yet.</p>}
         {threads.map(({ root, replies }) => (
           <Thread key={root.id} root={root} replies={replies} {...p} />
         ))}
@@ -122,7 +122,7 @@ function Entry({ c, ...p }: { c: CommentRow } & Props) {
       <div className="flex items-baseline gap-2">
         <span className="text-sm font-medium text-neutral-900">{c.author_name}</span>
         {c.by_owner && <span className="rounded bg-neutral-900 px-1 text-[10px] font-medium text-white">Team</span>}
-        <span className="text-[11px] text-neutral-400">{when(c.created_at)}</span>
+        <span className="text-[11px] text-neutral-500">{when(c.created_at)}</span>
         {p.isOwner && p.onDelete && (
           <button
             type="button"
@@ -130,7 +130,7 @@ function Entry({ c, ...p }: { c: CommentRow } & Props) {
             onClick={async () => {
               if (await confirm({ title: "Delete this comment?", description: "This can't be undone.", confirmLabel: "Delete", destructive: true })) p.onDelete!(c.id);
             }}
-            className="ml-auto rounded text-xs text-neutral-300 transition-colors hover:text-red-600 focus-visible:text-red-600 focus-visible:outline-2 focus-visible:outline-neutral-900"
+            className="ml-auto rounded text-xs text-neutral-500 transition-colors hover:text-red-600 focus-visible:text-red-600 focus-visible:outline-2 focus-visible:outline-neutral-900"
           >
             Delete
           </button>
@@ -175,7 +175,7 @@ function NewComment(p: {
           placeholder="Your name"
           maxLength={80}
           aria-label="Your name"
-          className="w-full rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm outline-none focus:border-neutral-900"
+          className="w-full rounded-md border border-neutral-400 px-2.5 py-1.5 text-sm outline-none focus:border-neutral-900"
         />
       )}
       <textarea
@@ -188,7 +188,7 @@ function NewComment(p: {
         rows={p.compact ? 2 : 3}
         placeholder={p.placeholder}
         aria-label="Comment"
-        className="w-full resize-none rounded-md border border-neutral-300 px-2.5 py-1.5 text-sm outline-none focus:border-neutral-900"
+        className="w-full resize-none rounded-md border border-neutral-400 px-2.5 py-1.5 text-sm outline-none focus:border-neutral-900"
       />
       {error && <p role="alert" className="text-xs text-red-600">{error}</p>}
       <Button variant="primary" size={p.compact ? "sm" : "md"} disabled={busy || !body.trim()} onClick={submit}>

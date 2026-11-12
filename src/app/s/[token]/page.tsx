@@ -9,7 +9,7 @@ import { TreeSchema, type CommentRow } from "@/lib/types";
 export const metadata: Metadata = { title: { absolute: "Sitemap review" }, robots: { index: false, follow: false } };
 export default function SharedPage({ params }: PageProps<"/s/[token]">) {
   return (
-    <Suspense fallback={<div className="grid h-dvh place-items-center text-sm text-neutral-400">Loading…</div>}>
+    <Suspense fallback={<div className="grid h-dvh place-items-center text-sm text-neutral-500">Loading…</div>}>
       <SharedContent params={params} />
     </Suspense>
   );

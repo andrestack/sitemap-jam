@@ -1,18 +1,18 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Popover } from "@base-ui/react/popover";
 import { toast } from "sonner";
+import AppBar from "./AppBar";
+import NavPreview from "./NavPreview";
 import SitemapCanvas from "./SitemapCanvas";
 import CommentPanel from "./CommentPanel";
 import { Button } from "./ui/button";
 import { useConfirm } from "./ui/confirm";
-import { LinkIcon } from "./ui/icons";
+import { LinkIcon, NavIcon } from "./ui/icons";
 import { createClient } from "@/lib/supabase/browser";
-import type { CommentRow, CommentTarget, Tree } from "@/lib/types";
+import type { CommentRow, CommentTarget, ProjectFull, ProjectSummary, Tree } from "@/lib/types";
 
-type Project = { id: string; name: string; tree: Tree; share_token: string; share_enabled: boolean };
 type SaveState = "saved" | "saving" | "error";
 
 const OWNER_NAME = process.env.NEXT_PUBLIC_OWNER_NAME || "Studio";
@@ -21,13 +21,31 @@ const COLUMNS = "id, project_id, page_id, section_id, parent_id, author_name, bo
 const randomToken = () =>
   Array.from(crypto.getRandomValues(new Uint8Array(32)), (b) => b.toString(16).padStart(2, "0")).join("");
 
-export default function Editor({ project, initialComments }: { project: Project; initialComments: CommentRow[] }) {
+type EditorProps = {
+  project: ProjectFull;
+  initialComments: CommentRow[];
+  projects: ProjectSummary[];
+  userEmail: string | null;
+  homePath?: string;
+  projectHref?: (id: string) => string;
+  /** Set when the editor lives inside the Workspace, so "New sitemap" resets in place. */
+  onNewSitemap?: () => void;
+};
+
+export default function Editor({ project, initialComments, projects, userEmail, homePath, projectHref, onNewSitemap }: EditorProps) {
   const [supabase] = useState(() => createClient());
   const [tree, setTree] = useState<Tree>(project.tree);
   const [save, setSave] = useState<SaveState>("saved");
   const [comments, setComments] = useState<CommentRow[]>(initialComments);
   const [target, setTarget] = useState<CommentTarget | null>(null);
   const [share, setShare] = useState({ token: project.share_token, enabled: project.share_enabled });
+  const [showNav, setShowNav] = useState(false);
+  const [focus, setFocus] = useState<{ id: string; tick: number } | null>(null);
+  const pickPage = (id: string) => setFocus((f) => ({ id, tick: (f?.tick ?? 0) + 1 }));
+  const toggleNav = () => {
+    setShowNav((v) => !v);
+    setFocus(null);
+  };
   const confirm = useConfirm();
 
   // Debounced autosave of the whole tree.
@@ -127,10 +145,19 @@ export default function Editor({ project, initialComments }: { project: Project;
 
   return (
     <div className="flex h-dvh flex-col bg-neutral-100">
-      <header className="relative z-10 flex items-center gap-3 border-b border-neutral-200 bg-white px-4 py-2.5">
-        <Link href="/" className="rounded text-sm text-neutral-500 transition-colors hover:text-neutral-900 focus-visible:outline-2 focus-visible:outline-neutral-900">← Projects</Link>
-        <h1 className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-900">{project.name}</h1>
-        <span className={`text-xs ${save === "error" ? "text-red-600" : "text-neutral-400"}`} aria-live="polite">
+      <AppBar
+        projects={projects}
+        userEmail={userEmail}
+        homePath={homePath}
+        projectHref={projectHref}
+        onNewSitemap={onNewSitemap}
+        currentId={project.id}
+        title={<h1 className="min-w-0 truncate text-sm font-semibold text-neutral-900">{project.name}</h1>}
+      >
+        <Button variant="ghost" size="sm" aria-pressed={showNav} onClick={toggleNav} className={showNav ? "bg-neutral-100 !text-neutral-900" : ""}>
+          <NavIcon width={14} height={14} /> <span className="hidden sm:inline">Navigation</span>
+        </Button>
+        <span className={`text-xs ${save === "error" ? "text-red-600" : "text-neutral-500"}`} aria-live="polite">
           {save === "saving" ? "Saving…" : save === "error" ? "Couldn't save. Retrying on next edit." : "Saved"}
         </span>
         {openCount > 0 && (
@@ -195,11 +222,13 @@ export default function Editor({ project, initialComments }: { project: Project;
             </Popover.Positioner>
           </Popover.Portal>
         </Popover.Root>
-      </header>
+      </AppBar>
+
+      {showNav && <NavPreview tree={tree} siteName={project.name} currentId={focus?.id ?? null} onSelect={pickPage} onClose={toggleNav} />}
 
       <div className="flex min-h-0 flex-1">
         <div className="min-w-0 flex-1">
-          <SitemapCanvas tree={tree} mode="edit" comments={comments} activeTarget={target} onChange={onChange} onOpenComments={setTarget} />
+          <SitemapCanvas tree={tree} mode="edit" comments={comments} activeTarget={target} focus={focus} onChange={onChange} onOpenComments={setTarget} />
         </div>
         {target && (
           <CommentPanel

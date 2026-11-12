@@ -1,9 +1,19 @@
 @import "tailwindcss";
 
+/*
+ * Hinterland Web palette: cream paper, charcoal ink, gold leaf.
+ *   charcoal #10141c  hinterland-web-new "editorial" tone (also v2 dark background)
+ *   cream    #f7f2e6  hinterland-web-v2 light background
+ *   border   #e0d6be  hinterland-web-v2 light border
+ *   muted    #6b6355  hinterland-web-v2 light muted text
+ *   gold     #d9b24c  hinterland-web-new `--marker`
+ * The UI is written with Tailwind's neutral / amber / red / emerald classes, so remapping those
+ * scales below rebrands every screen at once. Fonts stay Geist, as on hinterland-web-new.
+ */
 :root {
   color-scheme: light;
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f2e6;
+  --foreground: #10141c;
 }
 
 @theme inline {
@@ -13,8 +23,110 @@
   --font-mono: var(--font-geist-mono);
 }
 
+@theme {
+  --color-white: #fffdf8;
+
+  --color-neutral-50: #fbf8f0;
+  --color-neutral-100: #f7f2e6;
+  --color-neutral-200: #e0d6be;
+  --color-neutral-300: #d6cbad;
+  --color-neutral-400: #8a7f66;
+  --color-neutral-500: #6b6355;
+  --color-neutral-600: #544d41;
+  --color-neutral-700: #3b372f;
+  --color-neutral-800: #24262b;
+  --color-neutral-900: #10141c;
+  --color-neutral-950: #0a0d12;
+
+  /* Gold leaf. 400 is the fill; 700 is the darkest text-safe gold (5.6:1 on cream). */
+  --color-amber-50: #fbf5e3;
+  --color-amber-100: #f6ecce;
+  --color-amber-200: #efdba3;
+  --color-amber-300: #e3c36f;
+  --color-amber-400: #d9b24c;
+  --color-amber-500: #b8923a;
+  --color-amber-600: #9a7a2c;
+  --color-amber-700: #7a5c14;
+  --color-amber-800: #5f470f;
+  --color-amber-900: #4a3510;
+  --color-amber-950: #2e200a;
+
+  --color-red-50: #faece7;
+  --color-red-100: #f5d9d0;
+  --color-red-500: #c2573b;
+  --color-red-600: #a6432b;
+  --color-red-700: #8a3722;
+
+  --color-emerald-50: #e9f3ec;
+  --color-emerald-600: #4a8159;
+  --color-emerald-700: #3d6b4a;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+}
+
+::selection {
+  background: rgb(217 178 76 / 0.45);
+}
+
+/* Checkboxes and radios take the charcoal ink instead of the browser's default blue. */
+input,
+select,
+textarea {
+  accent-color: var(--foreground);
+}
+
+/* React Flow, restyled to the palette. :root raises specificity above the library's own defaults. */
+:root .react-flow {
+  --xy-background-color-default: transparent;
+  --xy-edge-stroke-default: #b3a88c;
+  --xy-edge-stroke-selected-default: #8a7f66;
+  --xy-handle-background-color-default: #8a7f66;
+  --xy-controls-button-background-color-default: #fffdf8;
+  --xy-controls-button-background-color-hover-default: #f7f2e6;
+  --xy-controls-button-color-default: #10141c;
+  --xy-controls-button-color-hover-default: #10141c;
+  --xy-controls-button-border-color-default: #e0d6be;
+  --xy-attribution-background-color-default: rgb(247 242 230 / 0.7);
+}
+
+/* Pages pop onto the canvas one after another when a sitemap appears. */
+@keyframes jam-pop {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.jam-pop {
+  animation: jam-pop 0.42s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  animation-delay: var(--jam-delay, 0ms);
+}
+
+/* The placeholder sitemap breathes while a real one is being written. */
+@keyframes jam-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.jam-breathe {
+  animation: jam-breathe 1.5s ease-in-out infinite;
+  animation-delay: var(--jam-delay, 0ms);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .jam-pop,
+  .jam-breathe {
+    animation: none;
+  }
 }

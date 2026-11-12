@@ -1,7 +1,7 @@
 "use client";
 
 import "@xyflow/react/dist/style.css";
-import { createContext, useContext, useMemo, useState } from "react";
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
 import {
   Background,
   BackgroundVariant,
@@ -10,6 +10,7 @@ import {
   Position,
   ReactFlow,
   ReactFlowProvider,
+  useReactFlow,
   type Edge,
   type Node,
   type NodeProps,
@@ -32,6 +33,7 @@ import { Menu } from "@base-ui/react/menu";
 import { clsx } from "clsx";
 import type { CommentRow, CommentTarget, Page, Tree } from "@/lib/types";
 import { SECTION_TYPES } from "@/lib/types";
+import { BRAND } from "@/lib/brand";
 import {
   NODE_W,
   addPage,
@@ -55,6 +57,8 @@ type Ctx = {
   mode: "edit" | "view";
   openCounts: Map<string, number>;
   activeKey: string | null;
+  /** The page picked in the navigation preview. */
+  focusId: string | null;
   dragging: boolean;
   onChange: (t: Tree) => void;
   onOpenComments: (t: CommentTarget) => void;
@@ -111,7 +115,7 @@ function SectionCard({ page, sectionId }: { page: Page; sectionId: string }) {
         "nodrag nopan group relative rounded-md border bg-white px-2.5 py-2 text-left transition-[border-color,opacity,box-shadow] duration-150",
         activeKey === key ? "border-neutral-900" : "border-neutral-200 hover:border-neutral-300",
         drag.isDragging && "opacity-40",
-        drop.isOver && !drag.isDragging && "shadow-[0_-3px_0_0_#171717]",
+        drop.isOver && !drag.isDragging && "shadow-[0_-3px_0_0_#10141c]",
       )}
     >
       <div className="flex items-center gap-1">
@@ -121,7 +125,7 @@ function SectionCard({ page, sectionId }: { page: Page; sectionId: string }) {
             type="button"
             aria-label={`Drag ${section.type} to reorder`}
             title="Drag to reorder"
-            className="-ml-1.5 inline-flex h-6 w-5 shrink-0 cursor-grab touch-none items-center justify-center rounded text-neutral-300 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:text-neutral-700 focus-visible:outline-2 focus-visible:outline-neutral-900 active:cursor-grabbing"
+            className="-ml-1.5 inline-flex h-6 w-5 shrink-0 cursor-grab touch-none items-center justify-center rounded text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700 focus-visible:text-neutral-700 focus-visible:outline-2 focus-visible:outline-neutral-900 active:cursor-grabbing"
           >
             <GripIcon width={14} height={14} />
           </button>
@@ -157,10 +161,10 @@ function SectionCard({ page, sectionId }: { page: Page; sectionId: string }) {
           rows={Math.max(2, Math.ceil(section.description.length / 34))}
           placeholder="What does this section say or do?"
           aria-label="Section description"
-          className="mt-1 block w-full resize-none rounded bg-transparent text-xs leading-[17px] text-neutral-600 outline-none placeholder:text-neutral-300 focus:bg-neutral-50"
+          className="mt-1 block w-full resize-none rounded bg-transparent text-xs leading-[17px] text-neutral-600 outline-none placeholder:text-neutral-400 focus:bg-neutral-50"
         />
       ) : (
-        <p className="mt-1 text-xs leading-[17px] text-neutral-600">{section.description || <span className="text-neutral-300">No description</span>}</p>
+        <p className="mt-1 text-xs leading-[17px] text-neutral-600">{section.description || <span className="text-neutral-500">No description</span>}</p>
       )}
     </div>
   );
@@ -192,8 +196,8 @@ function AddSectionZone({ page }: { page: Page }) {
 const menuItem =
   "flex cursor-default select-none items-center gap-2 rounded-md px-2.5 py-1.5 text-sm text-neutral-700 outline-none data-highlighted:bg-neutral-100 data-highlighted:text-neutral-900 data-disabled:opacity-40";
 
-function PageNode({ data }: NodeProps<Node<{ pageId: string }>>) {
-  const { tree, mode, onChange } = useCanvas();
+function PageNode({ data }: NodeProps<Node<{ pageId: string; index: number }>>) {
+  const { tree, mode, onChange, focusId } = useCanvas();
   const confirm = useConfirm();
   const page = tree.pages.find((p) => p.id === data.pageId);
   if (!page) return null;
@@ -214,7 +218,13 @@ function PageNode({ data }: NodeProps<Node<{ pageId: string }>>) {
   };
 
   return (
-    <div style={{ width: NODE_W }} className="group/page relative rounded-lg border border-neutral-300 bg-neutral-50 shadow-sm">
+    <div
+      style={{ width: NODE_W, ["--jam-delay" as string]: `${Math.min(data.index, 10) * 70}ms` }}
+      className={clsx(
+        "jam-pop group/page relative rounded-lg border border-neutral-300 bg-neutral-50 shadow-sm transition-shadow",
+        focusId === page.id && "ring-2 ring-amber-400 ring-offset-2 ring-offset-neutral-100",
+      )}
+    >
       <Handle type="target" position={Position.Top} className="!h-1.5 !w-1.5 !border-0 !bg-neutral-400" />
       <div className="flex items-center gap-1.5 border-b border-neutral-200 px-2.5 py-2">
         {editing ? (
@@ -304,6 +314,12 @@ function Inner(props: Props) {
   const { tree, comments, activeTarget } = props;
   const positions = useMemo(() => layoutTree(tree), [tree]);
   const [dragId, setDragId] = useState<string | null>(null);
+  const { fitView } = useReactFlow();
+  const focus = props.focus;
+  // Bring the page picked in the navigation preview into view. The tick re-centres on a repeat click.
+  useEffect(() => {
+    if (focus) fitView({ nodes: [{ id: focus.id }], duration: 450, padding: 0.5, maxZoom: 0.9 });
+  }, [focus, fitView]);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
     useSensor(KeyboardSensor),
@@ -311,11 +327,11 @@ function Inner(props: Props) {
 
   const nodes: Node[] = useMemo(
     () =>
-      tree.pages.map((p) => ({
+      tree.pages.map((p, index) => ({
         id: p.id,
         type: "page",
         position: positions.get(p.id) ?? { x: 0, y: 0 },
-        data: { pageId: p.id },
+        data: { pageId: p.id, index },
         draggable: false,
       })),
     [tree.pages, positions],
@@ -325,7 +341,7 @@ function Inner(props: Props) {
     const ids = new Set(tree.pages.map((p) => p.id));
     return tree.pages
       .filter((p) => p.parentId && ids.has(p.parentId))
-      .map((p) => ({ id: `${p.parentId}-${p.id}`, source: p.parentId!, target: p.id, type: "smoothstep", style: { stroke: "#a3a3a3" } }));
+      .map((p) => ({ id: `${p.parentId}-${p.id}`, source: p.parentId!, target: p.id, type: "smoothstep" }));
   }, [tree.pages]);
 
   const openCounts = useMemo(() => {
@@ -344,6 +360,7 @@ function Inner(props: Props) {
     mode: props.mode,
     openCounts,
     activeKey: activeTarget ? targetKey(activeTarget) : null,
+    focusId: props.focus?.id ?? null,
     dragging: dragId !== null,
     onChange,
     onOpenComments: props.onOpenComments,
@@ -392,7 +409,7 @@ function Inner(props: Props) {
           zoomOnScroll={false}
           proOptions={{ hideAttribution: false }}
         >
-          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#d4d4d4" />
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1} color={BRAND.dots} />
           <Controls showInteractive={false} />
         </ReactFlow>
         {/* Rendered at screen scale outside the zoomed canvas, so it stays readable at any zoom. */}
@@ -414,6 +431,8 @@ type Props = {
   mode: "edit" | "view";
   comments: CommentRow[];
   activeTarget: CommentTarget | null;
+  /** Highlights a page and zooms to it. Pass a new object (new tick) to re-centre on the same page. */
+  focus?: { id: string; tick: number } | null;
   onChange?: (t: Tree) => void;
   onOpenComments: (t: CommentTarget) => void;
 };

@@ -26,7 +26,7 @@ Open <http://localhost:3000/demo>. It runs on an invented business with nothing 
 1. **Supabase project.** Create one, then run the files in `supabase/migrations` in order (`0001_init.sql`, then `0002_comments_parent_index.sql`) in the SQL editor.
 2. **Create your user, then lock sign-ups.** Authentication → Users → add your user (tick auto-confirm). Then Authentication → Sign In / Providers → turn **Allow new users to sign up** off. This matters: the generate endpoint spends model credits.
 3. **Env.** Copy `.env.example` to `.env.local` and fill it in. Set `ALLOWED_EMAILS` to your email (required: `/api/generate` refuses to run without it) and add an `OPENROUTER_API_KEY`. `SITEMAP_MODEL` is optional and defaults to `anthropic/claude-sonnet-5.5`; any OpenRouter model that supports structured outputs works.
-4. `npm run dev`, sign in at `/login`, create a sitemap from `/`.
+4. `npm run dev` and sign in at `/login`. You land on the canvas with a placeholder sitemap and a form floating on the left. Fill in the name and brief, press **Generate sitemap**, and the real sitemap fills the same canvas, ready to edit and share. The **Projects** menu in the top bar reopens earlier sitemaps or starts a new one.
 
 ## How sharing is secured
 

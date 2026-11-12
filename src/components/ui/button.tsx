@@ -16,6 +16,8 @@ export const buttonStyles = cva(
     variants: {
       variant: {
         primary: "bg-neutral-900 text-white hover:bg-neutral-700",
+        // Gold leaf: the one call to action on a screen. The border gives the fill an edge on cream.
+        gold: "border border-amber-500/60 bg-amber-400 text-neutral-900 hover:bg-amber-300",
         secondary: "border border-neutral-300 bg-white text-neutral-800 hover:border-neutral-400 hover:bg-neutral-50",
         ghost: "text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900",
         danger: "bg-red-600 text-white hover:bg-red-700",
@@ -24,6 +26,7 @@ export const buttonStyles = cva(
       size: {
         sm: "h-7 px-2.5 text-xs",
         md: "h-9 px-3.5 text-sm",
+        lg: "h-11 px-5 text-sm",
         icon: "h-7 w-7",
         iconSm: "h-6 w-6",
       },

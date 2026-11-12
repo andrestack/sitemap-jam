@@ -47,8 +47,9 @@ export async function POST(req: Request) {
   const { data: row, error } = await supabase
     .from("projects")
     .insert({ name, brief, tree })
-    .select("id")
+    .select("id, name, tree, share_token, share_enabled")
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ id: row.id });
+  // The whole project comes back so the canvas can fill in without another round trip.
+  return NextResponse.json(row);
 }

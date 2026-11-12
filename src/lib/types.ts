@@ -25,6 +25,11 @@ export type CommentRow = {
 
 export type CommentTarget = { pageId: string; sectionId: string | null };
 
+/** What the editor needs to open a project. */
+export type ProjectFull = { id: string; name: string; tree: Tree; share_token: string; share_enabled: boolean };
+/** One row in the Projects menu. */
+export type ProjectSummary = { id: string; name: string; updated_at: string };
+
 /** Section types the generator is steered towards. Free text is still allowed in the editor. */
 export const SECTION_TYPES = [
   "Navbar",

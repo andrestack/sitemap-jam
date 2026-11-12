@@ -36,8 +36,8 @@ export default function LoginPage() {
         </p>
       )}
       <form onSubmit={submit} className="mt-6 space-y-3">
-        <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" aria-label="Email" className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900" />
-        <input type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" aria-label="Password" className="w-full rounded-md border border-neutral-300 px-3 py-2 text-sm outline-none focus:border-neutral-900" />
+        <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email" aria-label="Email" className="w-full rounded-md border border-neutral-400 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-900" />
+        <input type="password" required autoComplete="current-password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password" aria-label="Password" className="w-full rounded-md border border-neutral-400 bg-white px-3 py-2 text-sm outline-none focus:border-neutral-900" />
         {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
         <Button type="submit" variant="primary" disabled={busy || !configured} className="w-full">
           {busy ? "Signing in…" : "Sign in"}

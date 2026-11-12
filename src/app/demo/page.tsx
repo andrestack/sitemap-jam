@@ -4,6 +4,9 @@ import Link from "next/link";
 import { Suspense, useState } from "react";
 import SitemapCanvas from "@/components/SitemapCanvas";
 import CommentPanel from "@/components/CommentPanel";
+import NavPreview from "@/components/NavPreview";
+import { Button } from "@/components/ui/button";
+import { NavIcon } from "@/components/ui/icons";
 import type { CommentRow, CommentTarget, Tree } from "@/lib/types";
 
 // An invented business, so the demo works with no database and no real client data.
@@ -13,6 +16,9 @@ const home = "demo-home";
 const services = "demo-menu";
 const about = "demo-story";
 const contact = "demo-find";
+const breakfast = "demo-breakfast";
+const lunch = "demo-lunch";
+const catering = "demo-catering";
 const FIXTURE: Tree = {
   pages: [
     {
@@ -36,6 +42,18 @@ const FIXTURE: Tree = {
         s("FAQ", "Allergens, takeaway and catering questions."),
         s("Footer", ""),
       ],
+    },
+    {
+      id: breakfast, name: "Breakfast", slug: "breakfast", parentId: services,
+      sections: [s("Navbar", ""), s("Header", "All-day breakfast, from the classics to the weekend specials."), s("Footer", "")],
+    },
+    {
+      id: lunch, name: "Lunch & specials", slug: "lunch", parentId: services,
+      sections: [s("Navbar", ""), s("Header", "Lunch menu and the daily blackboard specials."), s("Footer", "")],
+    },
+    {
+      id: catering, name: "Catering", slug: "catering", parentId: services,
+      sections: [s("Navbar", ""), s("Header", "Platters and office catering."), s("Contact", "Enquiry form."), s("Footer", "")],
     },
     {
       id: about, name: "Our story", slug: "our-story", parentId: home,
@@ -70,6 +88,8 @@ function Demo() {
   const [target, setTarget] = useState<CommentTarget | null>(null);
   const [mode, setMode] = useState<"edit" | "view">("edit");
   const [author, setAuthor] = useState("");
+  const [showNav, setShowNav] = useState(false);
+  const [focus, setFocus] = useState<{ id: string; tick: number } | null>(null);
 
   const post = async (body: string, parentId: string | null) => {
     if (!target) return "Pick a page or section first.";
@@ -89,6 +109,17 @@ function Demo() {
       <header className="flex items-center gap-3 border-b border-neutral-200 bg-white px-4 py-2.5">
         <Link href="/" className="text-sm text-neutral-500 hover:text-neutral-900">← Home</Link>
         <h1 className="flex-1 truncate text-sm font-semibold text-neutral-900">Demo: Wattle &amp; Fern Café (nothing is saved)</h1>
+        <Button
+          variant="secondary"
+          size="sm"
+          aria-pressed={showNav}
+          onClick={() => {
+            setShowNav((v) => !v);
+            setFocus(null);
+          }}
+        >
+          <NavIcon width={14} height={14} /> Navigation
+        </Button>
         <div className="flex rounded-md border border-neutral-300 p-0.5 text-xs">
           {(["edit", "view"] as const).map((m) => (
             <button key={m} onClick={() => setMode(m)} className={`rounded px-2.5 py-1 ${mode === m ? "bg-neutral-900 text-white" : "text-neutral-600"}`}>
@@ -97,9 +128,21 @@ function Demo() {
           ))}
         </div>
       </header>
+      {showNav && (
+        <NavPreview
+          tree={tree}
+          siteName="Wattle & Fern"
+          currentId={focus?.id ?? null}
+          onSelect={(id) => setFocus((f) => ({ id, tick: (f?.tick ?? 0) + 1 }))}
+          onClose={() => {
+            setShowNav(false);
+            setFocus(null);
+          }}
+        />
+      )}
       <div className="relative flex min-h-0 flex-1">
         <div className="min-w-0 flex-1">
-          <SitemapCanvas tree={tree} mode={mode} comments={comments} activeTarget={target} onChange={setTree} onOpenComments={setTarget} />
+          <SitemapCanvas tree={tree} mode={mode} comments={comments} activeTarget={target} focus={focus} onChange={setTree} onOpenComments={setTarget} />
         </div>
         {target && (
           <CommentPanel
@@ -117,7 +160,7 @@ function Demo() {
 
 export default function DemoPage() {
   return (
-    <Suspense fallback={<div className="grid h-dvh place-items-center text-sm text-neutral-400">Loading…</div>}>
+    <Suspense fallback={<div className="grid h-dvh place-items-center text-sm text-neutral-500">Loading…</div>}>
       <Demo />
     </Suspense>
   );

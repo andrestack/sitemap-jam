@@ -66,6 +66,22 @@ export const CloseIcon = (p: SVGProps<SVGSVGElement>) => (
     <path d="M18 6 6 18M6 6l12 12" />
   </Icon>
 );
+export const NavIcon = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}>
+    <rect x="3" y="4" width="18" height="6" rx="1.5" />
+    <path d="M7 7h2M12 7h2M17 7h1M3 15h18M3 19h11" />
+  </Icon>
+);
+export const ChevronDownIcon = (p: SVGProps<SVGSVGElement>) => (
+  <Icon {...p}>
+    <path d="m6 9 6 6 6-6" />
+  </Icon>
+);
+export const SpinnerIcon = ({ className, ...p }: SVGProps<SVGSVGElement>) => (
+  <Icon {...p} className={`animate-spin motion-reduce:animate-none ${className ?? ""}`}>
+    <path d="M12 3a9 9 0 1 0 9 9" />
+  </Icon>
+);
 export const LinkIcon = (p: SVGProps<SVGSVGElement>) => (
   <Icon {...p}>
     <path d="M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1" />
